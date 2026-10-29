@@ -17,7 +17,7 @@ Para o uso offline na academia, um Service Worker (`sw.js`) guarda todos os arqu
 | `app.js` | Lógica: dia atual, edição, tema, persistência |
 | `sw.js` | Cache offline |
 | `manifest.json` | Manifesto PWA |
-| `icons/` | Ícones (192, 512, maskable e `apple-touch-icon` 180) |
+| `icons/` | Ícones `-v2` (192, 512, maskable e `apple-touch-icon` 180) |
 
 ## Rodar localmente
 
