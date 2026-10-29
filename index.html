@@ -25,6 +25,10 @@
   <div class="app">
     <header class="topbar">
       <p class="date" id="date"></p>
+      <button class="pill-sm glass" id="btn-edit" type="button">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="m3 17.3V21h3.7L17.8 9.9l-3.7-3.7L3 17.3ZM20.7 7a1 1 0 0 0 0-1.4l-2.3-2.3a1 1 0 0 0-1.4 0l-1.8 1.8 3.7 3.7L20.7 7Z"/></svg>
+        Editar
+      </button>
       <button class="icon-btn glass" id="btn-theme" type="button" aria-label="Escolher cores">
         <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 0 0 0 18c1.1 0 1.8-.9 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3Zm-5.5 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm3-4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm3 4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/></svg>
       </button>
@@ -33,49 +37,52 @@
     <main class="content" id="content" aria-live="polite"></main>
   </div>
 
+  <div class="fade" aria-hidden="true"></div>
   <nav class="bottom" aria-label="Navegação">
-    <div class="actions">
-      <button class="pill glass" id="btn-today" type="button" hidden>
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5V2L7 6.5 12 11V8a5 5 0 1 1-5 5H5a7 7 0 1 0 7-8Z"/></svg>
-        Voltar para hoje
-      </button>
-      <button class="pill primary" id="btn-edit" type="button">
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="m3 17.3V21h3.7L17.8 9.9l-3.7-3.7L3 17.3ZM20.7 7a1 1 0 0 0 0-1.4l-2.3-2.3a1 1 0 0 0-1.4 0l-1.8 1.8 3.7 3.7L20.7 7Z"/></svg>
-        Editar
-      </button>
-    </div>
-    <div class="dock glass" id="dock" role="tablist" aria-label="Dias da semana"></div>
+    <button class="pill float" id="btn-today" type="button" hidden>
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5V2L7 6.5 12 11V8a5 5 0 1 1-5 5H5a7 7 0 1 0 7-8Z"/></svg>
+      Voltar para hoje
+    </button>
+    <div class="dock float" id="dock" role="tablist" aria-label="Dias da semana"></div>
   </nav>
 
   <div class="overlay" id="overlay" hidden>
     <div class="backdrop" data-close></div>
 
-    <section class="sheet glass-strong" id="sheet-edit" role="dialog" aria-modal="true" aria-labelledby="edit-title" hidden>
-      <div class="grabber" aria-hidden="true"></div>
-      <h2 id="edit-title"></h2>
-      <form id="form-edit" autocomplete="off">
-        <label class="field">
-          <span>Grupo muscular</span>
-          <input id="in-muscle" type="text" maxlength="40" placeholder="Ex.: Peito e tríceps" enterkeyhint="next">
-        </label>
-        <div class="field">
-          <span>Exercícios</span>
-          <ul class="rows" id="rows"></ul>
-          <button class="add" id="btn-add" type="button">+ Adicionar exercício</button>
+    <section class="sheet float" id="sheet-edit" role="dialog" aria-modal="true" aria-labelledby="edit-title" hidden>
+      <div class="sheet-head">
+        <div class="grabber" aria-hidden="true"></div>
+        <h2 id="edit-title"></h2>
+      </div>
+      <form class="sheet-form" id="form-edit" autocomplete="off">
+        <div class="sheet-body">
+          <label class="field">
+            <span>Grupo muscular</span>
+            <input id="in-muscle" type="text" maxlength="40" placeholder="Ex.: Peito e tríceps" enterkeyhint="next">
+          </label>
+          <div class="field">
+            <span>Exercícios</span>
+            <ul class="rows" id="rows"></ul>
+            <button class="add" id="btn-add" type="button">+ Adicionar exercício</button>
+          </div>
         </div>
         <div class="sheet-actions">
           <button class="pill glass" type="button" data-close>Cancelar</button>
-          <button class="pill primary" type="submit">Salvar</button>
+          <button class="pill primary" id="btn-save" type="submit">Salvar</button>
         </div>
       </form>
     </section>
 
-    <section class="sheet glass-strong" id="sheet-theme" role="dialog" aria-modal="true" aria-labelledby="theme-title" hidden>
-      <div class="grabber" aria-hidden="true"></div>
-      <h2 id="theme-title">Cores do app</h2>
-      <div class="swatches" id="swatches"></div>
-      <div class="sheet-actions">
-        <button class="pill primary" type="button" data-close>Pronto</button>
+    <section class="sheet float" id="sheet-theme" role="dialog" aria-modal="true" aria-labelledby="theme-title" hidden>
+      <div class="sheet-head">
+        <div class="grabber" aria-hidden="true"></div>
+        <h2 id="theme-title">Cores do app</h2>
+      </div>
+      <div class="sheet-form">
+        <div class="sheet-body"><div class="swatches" id="swatches"></div></div>
+        <div class="sheet-actions">
+          <button class="pill primary" type="button" data-close>Pronto</button>
+        </div>
       </div>
     </section>
   </div>
