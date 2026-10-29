@@ -1,48 +1,48 @@
 /* ---------- Paletas ---------- */
 :root,
-:root[data-theme="oceano"] {
-  --bg: #0b1020;
-  --orb1: #3b82f6;
-  --orb2: #22d3ee;
-  --orb3: #6366f1;
-  --accent: #5eb0ff;
-  --accent-2: #3b82f6;
-  --on-accent: #04122b;
-}
-:root[data-theme="por-do-sol"] {
-  --bg: #1a0f16;
-  --orb1: #fb7185;
-  --orb2: #f59e0b;
-  --orb3: #c026d3;
-  --accent: #ff9a6b;
-  --accent-2: #f43f5e;
-  --on-accent: #2b0a10;
-}
 :root[data-theme="floresta"] {
-  --bg: #08150f;
-  --orb1: #10b981;
-  --orb2: #84cc16;
-  --orb3: #0ea5a4;
-  --accent: #5eead4;
-  --accent-2: #10b981;
-  --on-accent: #03180f;
+  --bg: #1d2a26;
+  --orb1: #5f8470;
+  --orb2: #7b5a3c;
+  --orb3: #3a5448;
+  --accent: #bad1c3;
+  --accent-2: #5f8470;
+  --on-accent: #16221d;
 }
-:root[data-theme="violeta"] {
-  --bg: #120b1f;
-  --orb1: #a855f7;
-  --orb2: #ec4899;
-  --orb3: #6366f1;
-  --accent: #c4a1ff;
-  --accent-2: #a855f7;
-  --on-accent: #1a0933;
+:root[data-theme="terra"] {
+  --bg: #261c15;
+  --orb1: #7b5a3c;
+  --orb2: #b8946e;
+  --orb3: #4a3828;
+  --accent: #e3c7a4;
+  --accent-2: #9a7455;
+  --on-accent: #26190f;
+}
+:root[data-theme="oliva"] {
+  --bg: #212717;
+  --orb1: #6b7a4f;
+  --orb2: #a5b48a;
+  --orb3: #444a35;
+  --accent: #c3cf9f;
+  --accent-2: #7d8a5e;
+  --on-accent: #1a1f10;
+}
+:root[data-theme="musgo"] {
+  --bg: #1d2a26;
+  --orb1: #7b5a3c;
+  --orb2: #5f8470;
+  --orb3: #2e4239;
+  --accent: #e8d5b8;
+  --accent-2: #a07c58;
+  --on-accent: #231a10;
 }
 
 /* ---------- Base ---------- */
 :root {
-  --text: #f5f7fb;
-  --text-dim: rgba(245, 247, 251, 0.66);
+  --text: #f3ece0;
+  --text-dim: rgba(243, 236, 224, 0.68);
   --glass: rgba(255, 255, 255, 0.09);
-  --glass-strong: rgba(24, 28, 44, 0.72);
+  --glass-strong: rgba(26, 36, 32, 0.78);
   --stroke: rgba(255, 255, 255, 0.16);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   --sat: env(safe-area-inset-top, 0px);
@@ -139,7 +139,7 @@ button { border: 0; background: none; cursor: pointer; touch-action: manipulatio
 .muscle {
   margin: 0; font-size: clamp(2.2rem, 11vw, 3.2rem); line-height: 1.05; font-weight: 800; letter-spacing: -0.03em;
   overflow-wrap: anywhere;
-  background: linear-gradient(135deg, #fff 30%, var(--accent));
+  background: linear-gradient(135deg, #fbf6ec 30%, var(--accent));
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent; color: transparent;
 }
@@ -235,7 +235,7 @@ input[type="text"] {
   -webkit-appearance: none; appearance: none;
 }
 input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1); }
-input::placeholder { color: rgba(245, 247, 251, 0.38); }
+input::placeholder { color: rgba(243, 236, 224, 0.4); }
 
 .rows { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; }
 .row { display: flex; gap: 8px; align-items: center; }

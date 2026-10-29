@@ -16,10 +16,10 @@
   ];
 
   const TEMAS = [
-    { id: 'oceano', nome: 'Oceano', cor: '#0b1020', grad: 'linear-gradient(135deg,#3b82f6,#22d3ee)' },
-    { id: 'por-do-sol', nome: 'Pôr do sol', cor: '#1a0f16', grad: 'linear-gradient(135deg,#fb7185,#f59e0b)' },
-    { id: 'floresta', nome: 'Floresta', cor: '#08150f', grad: 'linear-gradient(135deg,#10b981,#84cc16)' },
-    { id: 'violeta', nome: 'Violeta', cor: '#120b1f', grad: 'linear-gradient(135deg,#a855f7,#ec4899)' }
+    { id: 'floresta', nome: 'Floresta', cor: '#1d2a26', grad: 'linear-gradient(135deg,#5f8470,#bad1c3)' },
+    { id: 'terra', nome: 'Terra', cor: '#261c15', grad: 'linear-gradient(135deg,#7b5a3c,#e3c7a4)' },
+    { id: 'oliva', nome: 'Oliva', cor: '#212717', grad: 'linear-gradient(135deg,#6b7a4f,#c3cf9f)' },
+    { id: 'musgo', nome: 'Musgo', cor: '#1d2a26', grad: 'linear-gradient(135deg,#7b5a3c,#5f8470)' }
   ];
 
   const $ = (id) => document.getElementById(id);
