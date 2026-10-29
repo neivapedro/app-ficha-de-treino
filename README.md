@@ -49,4 +49,4 @@ Qualquer hospedagem estática com HTTPS (Netlify, Cloudflare Pages, Vercel) tamb
 
 ## Atualizar o app depois de publicar
 
-Ao alterar arquivos, aumente o número em `CACHE` no `sw.js` (ex.: `ficha-de-treino-v2`) para o iPhone baixar a nova versão.
+Com a estratégia de rede primeiro, o app já pega a versão nova ao abrir com internet. Mesmo assim, ao alterar arquivos, aumente o número em `CACHE` no `sw.js` (ex.: `ficha-de-treino-v2`) para o iPhone baixar a nova versão.
