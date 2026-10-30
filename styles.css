@@ -215,7 +215,7 @@ button { border: 0; background: none; cursor: pointer; touch-action: manipulatio
 /* Preenchimento que acompanha o dedo */
 .fill {
   position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background: linear-gradient(90deg, rgba(147, 214, 164, 0.26), rgba(147, 214, 164, 0.46));
+  background: linear-gradient(90deg, rgba(147, 214, 164, 0.18), rgba(147, 214, 164, 0.3)); /* suave o bastante para o texto manter contraste acima de 4,5:1 */
   transform: scaleX(var(--p, 0)); transform-origin: left center;
   transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
@@ -254,6 +254,10 @@ button { border: 0; background: none; cursor: pointer; touch-action: manipulatio
 .prog-count { font-size: var(--fs-sub); font-weight: 700; }
 .prog-rest { font-size: var(--fs-caption); font-weight: 600; color: var(--text-dim); }
 .progress.completo .prog-rest { color: var(--done); }
+.progress.brilho .bar { animation: brilho 0.9s ease-out; }
+@keyframes brilho { 0% { box-shadow: 0 0 0 0 rgba(147, 214, 164, 0); } 40% { box-shadow: 0 0 16px 3px rgba(147, 214, 164, 0.7); } 100% { box-shadow: 0 0 0 0 rgba(147, 214, 164, 0); } }
+.badge { transition: background-color 0.4s, color 0.4s; }
+.badge.completo { color: var(--on-done); background: var(--done); }
 .bar { height: 6px; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.12); overflow: hidden; }
 .bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--done); transition: width 0.4s cubic-bezier(0.2, 0.9, 0.3, 1); }
 .prog-hint { margin-top: var(--s2); font-size: var(--fs-caption); color: var(--text-dim); }

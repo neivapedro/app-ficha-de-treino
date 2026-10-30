@@ -149,7 +149,18 @@
     const n = document.querySelectorAll('.item.feito').length;
     box.querySelector('.prog-count').textContent = n + ' de ' + total + (total === 1 ? ' feito' : ' feitos');
     box.querySelector('.prog-rest').textContent = n === total ? 'Treino concluído ✓' : n === 0 ? '' : 'faltam ' + (total - n);
-    box.classList.toggle('completo', n === total);
+    const completo = n === total;
+    const havia = box.classList.contains('completo');
+    box.classList.toggle('completo', completo);
+    const selo = document.querySelector('.hero .badge');
+    if (selo) selo.classList.toggle('completo', completo);
+    if (completo && !havia && box.dataset.pronto) {
+      // Só celebra quando o treino é concluído agora, não ao abrir o app já concluído
+      box.classList.remove('brilho');
+      void box.offsetWidth;
+      box.classList.add('brilho');
+    }
+    box.dataset.pronto = '1';
     box.querySelector('.prog-hint').hidden = n !== 0;
     const barra = box.querySelector('.bar');
     barra.setAttribute('aria-valuemin', '0');
