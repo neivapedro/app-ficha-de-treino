@@ -1,5 +1,5 @@
 // Service worker: guarda o app no aparelho para funcionar 100% offline.
-const CACHE = 'ficha-de-treino-v8';
+const CACHE = 'ficha-de-treino-v9';
 const ARQUIVOS = [
   './',
   './index.html',

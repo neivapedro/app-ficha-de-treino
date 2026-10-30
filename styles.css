@@ -179,11 +179,20 @@ button { border: 0; background: none; cursor: pointer; touch-action: manipulatio
 }
 .badge.dim { color: var(--text-dim); background: var(--glass); border: 1px solid var(--stroke); }
 
+.title-row { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s3); }
 .title {
-  margin-top: var(--s3);
+  margin: 0; min-width: 0;
   font-size: var(--fs-title); line-height: 1.1; font-weight: 700; letter-spacing: -0.02em;
   text-wrap: balance; overflow-wrap: anywhere;
 }
+.tag {
+  flex: none; min-width: 48px; padding: 5px var(--s3) 6px; border-radius: var(--r-sm);
+  display: flex; flex-direction: column; align-items: center; line-height: 1;
+  color: var(--accent); border: 1.5px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.tag small { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.85; }
+.tag b { margin-top: 3px; font-size: 1.35rem; font-weight: 800; letter-spacing: 0; text-transform: uppercase; }
 .title.dim { color: var(--text-dim); font-size: var(--fs-sub); font-weight: 600; letter-spacing: 0; }
 
 /* Lista: um único contêiner, itens separados por linhas finas */
@@ -361,6 +370,12 @@ input[type="text"] {
 }
 input[type="text"]:focus { border-color: var(--accent); background: rgba(255, 255, 255, 0.1); }
 input::placeholder { color: var(--text-faint); }
+
+.field-row { display: flex; gap: var(--s3); }
+.field-row .field { margin-bottom: var(--s5); }
+.field-ficha { flex: none; width: 88px; }
+.field-ficha input { text-align: center; text-transform: uppercase; font-weight: 700; }
+.field-musculo { flex: 1; min-width: 0; }
 
 .rows { list-style: none; padding: 0; margin: 0 0 var(--s3); display: grid; gap: var(--s2); }
 .row { display: flex; gap: var(--s1); align-items: center; }

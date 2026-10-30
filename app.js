@@ -50,6 +50,7 @@
     for (let i = 0; i < 7; i++) {
       const f = bruto[i];
       fichas[i] = {
+        ficha: f && typeof f.ficha === 'string' ? f.ficha : '',
         musculo: f && typeof f.musculo === 'string' ? f.musculo : '',
         exercicios: f && Array.isArray(f.exercicios) ? f.exercicios.filter((x) => typeof x === 'string') : []
       };
@@ -76,7 +77,7 @@
     try {
       const o = JSON.parse(ler(CHAVE_COPIA) || 'null');
       if (o && typeof o.musculo === 'string' && Array.isArray(o.exercicios) && DIAS.some((d) => d.idx === o.origem)) {
-        return { origem: o.origem, musculo: o.musculo, exercicios: o.exercicios.filter((x) => typeof x === 'string') };
+        return { origem: o.origem, ficha: typeof o.ficha === 'string' ? o.ficha : '', musculo: o.musculo, exercicios: o.exercicios.filter((x) => typeof x === 'string') };
       }
     } catch (_) { /* sem cópia válida */ }
     return null;
@@ -248,7 +249,7 @@
   }
 
   // ---------- Copiar e colar ficha ----------
-  const mesmaFicha = (a, b) => a.musculo === b.musculo && a.exercicios.length === b.exercicios.length && a.exercicios.every((x, i) => x === b.exercicios[i]);
+  const mesmaFicha = (a, b) => a.ficha === b.ficha && a.musculo === b.musculo && a.exercicios.length === b.exercicios.length && a.exercicios.every((x, i) => x === b.exercicios[i]);
 
   function preencherAcoes() {
     const box = document.querySelector('.hero-actions');
@@ -275,7 +276,7 @@
 
   function copiarFicha() {
     const f = fichas[selecionado];
-    copia = { origem: selecionado, musculo: f.musculo, exercicios: f.exercicios.slice() };
+    copia = { origem: selecionado, ficha: f.ficha, musculo: f.musculo, exercicios: f.exercicios.slice() };
     gravar(CHAVE_COPIA, JSON.stringify(copia));
     preencherAcoes();
     mostrarAviso('Ficha de ' + diaInfo(selecionado).nome.toLowerCase() + ' copiada');
@@ -284,8 +285,8 @@
   function colarFicha() {
     if (!copia) return;
     const alvo = selecionado;
-    const anterior = { musculo: fichas[alvo].musculo, exercicios: fichas[alvo].exercicios.slice() };
-    fichas[alvo] = { musculo: copia.musculo, exercicios: copia.exercicios.slice() };
+    const anterior = { ficha: fichas[alvo].ficha, musculo: fichas[alvo].musculo, exercicios: fichas[alvo].exercicios.slice() };
+    fichas[alvo] = { ficha: copia.ficha, musculo: copia.musculo, exercicios: copia.exercicios.slice() };
     salvarFichas();
     render();
     mostrarAviso('Ficha de ' + diaInfo(copia.origem).nome.toLowerCase() + ' colada', () => {
@@ -359,7 +360,18 @@
     const acoes = el('div', 'hero-actions');
     topo.append(acoes);
     hero.append(topo);
-    if (!vazia) hero.append(el('h1', 'title' + (musculo ? '' : ' dim'), musculo || 'Grupo muscular não definido'));
+    if (!vazia) {
+      const linha = el('div', 'title-row');
+      linha.append(el('h1', 'title' + (musculo ? '' : ' dim'), musculo || 'Grupo muscular não definido'));
+      const letra = f.ficha.trim();
+      if (letra) {
+        const tag = el('span', 'tag');
+        tag.setAttribute('aria-label', 'Ficha ' + letra);
+        tag.append(el('small', null, 'Ficha'), el('b', null, letra));
+        linha.append(tag);
+      }
+      hero.append(linha);
+    }
     c.append(hero);
 
     if (vazia) {
@@ -463,6 +475,7 @@
   function abrirEdicao() {
     const f = fichas[selecionado];
     $('edit-title').textContent = 'Editar ' + diaInfo(selecionado).nome.toLowerCase();
+    $('in-ficha').value = f.ficha;
     $('in-muscle').value = f.musculo;
     $('rows').replaceChildren();
     f.exercicios.forEach((x) => novaLinha(x, false));
@@ -478,6 +491,7 @@
     const salvar = $('btn-save');
     if (salvar.disabled) return;
     fichas[selecionado] = {
+      ficha: $('in-ficha').value.trim(),
       musculo: $('in-muscle').value.trim(),
       exercicios: Array.from($('rows').querySelectorAll('input')).map((i) => i.value.trim()).filter(Boolean)
     };
@@ -486,6 +500,12 @@
     salvar.disabled = true;
     salvar.textContent = 'Salvo ✓';
     setTimeout(fecharSheet, 450);
+  });
+
+  $('in-ficha').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    $('in-muscle').focus();
   });
 
   $('in-muscle').addEventListener('keydown', (e) => {

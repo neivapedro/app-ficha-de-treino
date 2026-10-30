@@ -58,10 +58,16 @@
       </div>
       <form class="sheet-form" id="form-edit" autocomplete="off">
         <div class="sheet-body">
-          <label class="field">
-            <span>Grupo muscular</span>
-            <input id="in-muscle" type="text" maxlength="40" placeholder="Ex.: Peito e tríceps" enterkeyhint="next">
-          </label>
+          <div class="field-row">
+            <label class="field field-ficha">
+              <span>Ficha</span>
+              <input id="in-ficha" type="text" maxlength="4" placeholder="A" autocapitalize="characters" enterkeyhint="next" aria-label="Ficha (A, B, C...)">
+            </label>
+            <label class="field field-musculo">
+              <span>Grupo muscular</span>
+              <input id="in-muscle" type="text" maxlength="40" placeholder="Ex.: Peito e tríceps" enterkeyhint="next">
+            </label>
+          </div>
           <div class="field">
             <span>Exercícios</span>
             <ul class="rows" id="rows"></ul>
