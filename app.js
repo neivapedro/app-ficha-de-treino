@@ -3,6 +3,8 @@
 
   const CHAVE_DADOS = 'ficha-de-treino:v1';
   const CHAVE_TEMA = 'ficha-de-treino:tema';
+  const CHAVE_FEITOS = 'ficha-de-treino:feitos';
+  const LIMIAR = 0.5; // fração da largura que confirma o gesto
 
   // Ordem de exibição: segunda → domingo. `getDay()` usa 0 = domingo.
   const DIAS = [
@@ -23,6 +25,7 @@
   ];
 
   const ICONE_REMOVER = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>';
+  const ICONE_CHECK = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const ICONE_HALTER = '<svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 24h20"/><rect x="8" y="14" width="6" height="20" rx="2"/><rect x="34" y="14" width="6" height="20" rx="2"/><path d="M4 19v10M44 19v10"/></g></svg>';
 
   const $ = (id) => document.getElementById(id);
@@ -51,11 +54,28 @@
     return fichas;
   }
 
+  // Exercícios feitos hoje. Guardados com a data: no dia seguinte a marcação recomeça do zero.
+  const dataISO = () => {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  };
+  const chaveItem = (i, nome) => i + ':' + nome;
+  function carregarFeitos(data) {
+    try {
+      const o = JSON.parse(ler(CHAVE_FEITOS) || '{}');
+      if (o && o.data === data && Array.isArray(o.itens)) return new Set(o.itens);
+    } catch (_) { /* dados inválidos: começa vazio */ }
+    return new Set();
+  }
+
   const fichas = carregarFichas();
   const salvarFichas = () => gravar(CHAVE_DADOS, JSON.stringify(fichas));
+  const salvarFeitos = () => gravar(CHAVE_FEITOS, JSON.stringify({ data: dataHoje, itens: Array.from(feitos) }));
 
   // ---------- Estado ----------
   let hoje = new Date().getDay();
+  let dataHoje = dataISO();
+  let feitos = carregarFeitos(dataHoje);
   let selecionado = hoje;
   let focoAnterior = null;
 
@@ -91,6 +111,125 @@
       b.addEventListener('click', () => gravar(CHAVE_TEMA, aplicarTema(t.id)));
       box.append(b);
     });
+  }
+
+  // ---------- Progresso do treino de hoje ----------
+  function montarProgresso() {
+    const box = el('div', 'progress');
+    const topo = el('div', 'prog-top');
+    topo.append(el('strong', 'prog-count'), el('span', 'prog-rest'));
+    const barra = el('div', 'bar');
+    barra.setAttribute('role', 'progressbar');
+    barra.setAttribute('aria-label', 'Exercícios feitos');
+    barra.append(el('i'));
+    box.append(topo, barra, el('p', 'prog-hint', 'Arraste um exercício para a direita para marcar como feito.'));
+    return box;
+  }
+
+  function atualizarProgresso() {
+    const box = document.querySelector('.progress');
+    if (!box) return;
+    const total = fichas[hoje].exercicios.length;
+    const n = document.querySelectorAll('.item.feito').length;
+    box.querySelector('.prog-count').textContent = n + ' de ' + total + (total === 1 ? ' feito' : ' feitos');
+    box.querySelector('.prog-rest').textContent = n === total ? 'Treino concluído ✓' : n === 0 ? '' : 'faltam ' + (total - n);
+    box.classList.toggle('completo', n === total);
+    box.querySelector('.prog-hint').hidden = n !== 0;
+    const barra = box.querySelector('.bar');
+    barra.setAttribute('aria-valuemin', '0');
+    barra.setAttribute('aria-valuemax', String(total));
+    barra.setAttribute('aria-valuenow', String(n));
+    barra.firstChild.style.width = (total ? (n / total) * 100 : 0) + '%';
+  }
+
+  function montarItem(nome, chave, interativo) {
+    const li = el('li', 'item');
+    const fill = el('i', 'fill');
+    fill.setAttribute('aria-hidden', 'true');
+    li.append(fill);
+    if (!interativo) {
+      const num = el('span', 'num');
+      num.append(el('span'));
+      li.append(num, el('span', 'nome', nome));
+      return li;
+    }
+    const num = el('button', 'num');
+    num.type = 'button';
+    num.append(el('span'));
+    const nomeEl = el('span', 'nome', nome);
+    const ok = el('span', 'check');
+    ok.setAttribute('aria-hidden', 'true');
+    ok.innerHTML = ICONE_CHECK;
+    li.append(num, nomeEl, ok);
+    li.classList.add('swipe');
+    const feito = feitos.has(chave);
+    li.classList.toggle('feito', feito);
+    li.style.setProperty('--p', feito ? 1 : 0);
+    num.setAttribute('aria-pressed', String(feito));
+    num.setAttribute('aria-label', 'Marcar "' + nome + '" como feito');
+    num.addEventListener('click', () => definirFeito(li, chave, !feitos.has(chave)));
+    ligarGesto(li, chave);
+    return li;
+  }
+
+  function definirFeito(li, chave, valor) {
+    if (valor) feitos.add(chave); else feitos.delete(chave);
+    salvarFeitos();
+    li.classList.remove('arrastando');
+    li.classList.toggle('feito', valor);
+    li.style.setProperty('--p', valor ? 1 : 0);
+    li.querySelector('.num').setAttribute('aria-pressed', String(valor));
+    if (valor) {
+      li.classList.remove('pop');
+      void li.offsetWidth; // reinicia a animação
+      li.classList.add('pop');
+    }
+    atualizarProgresso();
+  }
+
+  // Arrastar para a direita preenche o exercício; passando da metade, confirma ao soltar.
+  // Em um exercício já feito, arrastar para a esquerda desmarca.
+  function ligarGesto(li, chave) {
+    let id = null, x0 = 0, y0 = 0, larg = 1, base = 0, modo = null, p = 0, suprimir = false;
+
+    li.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      id = e.pointerId; x0 = e.clientX; y0 = e.clientY;
+      larg = li.offsetWidth || 1;
+      base = feitos.has(chave) ? 1 : 0;
+      modo = null;
+    });
+
+    li.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== id) return;
+      const dx = e.clientX - x0, dy = e.clientY - y0;
+      if (modo === null) {
+        if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          modo = 'h';
+          li.setPointerCapture(id);
+          li.classList.add('arrastando');
+        } else {
+          if (Math.abs(dy) > 10) id = null; // rolagem vertical: deixa o navegador rolar
+          return;
+        }
+      }
+      p = Math.min(1, Math.max(0, base + dx / larg));
+      li.style.setProperty('--p', p);
+      li.classList.toggle('feito', p >= LIMIAR);
+    });
+
+    const soltar = (e, cancelado) => {
+      if (e.pointerId !== id) return;
+      id = null;
+      if (modo !== 'h') return;
+      modo = null;
+      suprimir = true;
+      setTimeout(() => { suprimir = false; }, 60);
+      definirFeito(li, chave, cancelado ? base === 1 : p >= LIMIAR);
+    };
+    li.addEventListener('pointerup', (e) => soltar(e, false));
+    li.addEventListener('pointercancel', (e) => soltar(e, true));
+    li.addEventListener('click', (e) => { if (suprimir) { e.stopPropagation(); e.preventDefault(); } }, true);
   }
 
   // ---------- Renderização ----------
@@ -149,9 +288,11 @@
     } else if (f.exercicios.length === 0) {
       c.append(el('p', 'hint', 'Nenhum exercício na lista. Toque em Editar para adicionar.'));
     } else {
+      if (ehHoje) c.append(montarProgresso());
       const ul = el('ul', 'list glass');
-      f.exercicios.forEach((nome) => ul.append(el('li', 'item', nome)));
+      f.exercicios.forEach((nome, i) => ul.append(montarItem(nome, chaveItem(i, nome), ehHoje)));
       c.append(ul);
+      if (ehHoje) atualizarProgresso();
     }
     c.style.setProperty('--dx', '0px');
   }
