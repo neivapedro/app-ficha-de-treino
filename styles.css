@@ -169,6 +169,8 @@ button { border: 0; background: none; cursor: pointer; touch-action: manipulatio
 #content { --dx: 0px; }
 
 .hero { padding: var(--s5) 2px var(--s4); animation: enter 0.22s ease-out both; }
+.hero-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
+.hero-actions { display: flex; gap: var(--s2); }
 .badge {
   display: inline-flex; align-items: center;
   padding: 6px var(--s3); border-radius: var(--r-pill);
@@ -248,6 +250,19 @@ button { border: 0; background: none; cursor: pointer; touch-action: manipulatio
 .prog-hint { margin-top: var(--s2); font-size: var(--fs-caption); color: var(--text-dim); }
 .hint { margin-top: var(--s3); padding: 0 2px; color: var(--text-dim); font-size: var(--fs-caption); }
 
+/* Aviso temporário (copiar, colar, desfazer) */
+.toast {
+  position: fixed; z-index: 6; left: 50%; transform: translateX(-50%);
+  bottom: calc(var(--sab) + var(--dock-h) + 88px);
+  max-width: calc(100% - 2 * var(--gutter)); width: max-content;
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s2) var(--s4); min-height: 48px; border-radius: var(--r-pill);
+  font-size: var(--fs-caption); font-weight: 600;
+  animation: toast-in 0.25s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.toast-btn { min-height: 44px; padding: 0 var(--s2); font-weight: 700; color: var(--accent); }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translateX(-50%); } }
+
 /* Estado vazio */
 .empty-card {
   padding: var(--s5) var(--s5) var(--s5); border-radius: var(--r-md); text-align: center;
@@ -255,6 +270,7 @@ button { border: 0; background: none; cursor: pointer; touch-action: manipulatio
 }
 .empty-card svg { color: var(--accent); }
 .empty-card h1 { margin: var(--s3) 0 var(--s2); font-size: var(--fs-sub); font-weight: 700; }
+.empty-card .pill { margin: 0 var(--s1) var(--s2); }
 .empty-card p { margin-bottom: var(--s4); color: var(--text-dim); font-size: var(--fs-caption); line-height: 1.5; }
 
 @keyframes enter {

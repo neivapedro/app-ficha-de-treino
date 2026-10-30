@@ -4,6 +4,7 @@
   const CHAVE_DADOS = 'ficha-de-treino:v1';
   const CHAVE_TEMA = 'ficha-de-treino:tema';
   const CHAVE_FEITOS = 'ficha-de-treino:feitos';
+  const CHAVE_COPIA = 'ficha-de-treino:copia';
   const LIMIAR = 0.5; // fração da largura que confirma o gesto
 
   // Ordem de exibição: segunda → domingo. `getDay()` usa 0 = domingo.
@@ -26,6 +27,8 @@
 
   const ICONE_REMOVER = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>';
   const ICONE_CHECK = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const ICONE_COPIAR = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1Zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H8V7h11v14Z"/></svg>';
+  const ICONE_COLAR = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19 2h-4.2A3 3 0 0 0 12 0a3 3 0 0 0-2.8 2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm7 18H5V4h2v3h10V4h2v16Z"/></svg>';
   const ICONE_HALTER = '<svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 24h20"/><rect x="8" y="14" width="6" height="20" rx="2"/><rect x="34" y="14" width="6" height="20" rx="2"/><path d="M4 19v10M44 19v10"/></g></svg>';
 
   const $ = (id) => document.getElementById(id);
@@ -68,7 +71,19 @@
     return new Set();
   }
 
+  // Ficha copiada: fica guardada para colar depois, mesmo fechando o app.
+  function carregarCopia() {
+    try {
+      const o = JSON.parse(ler(CHAVE_COPIA) || 'null');
+      if (o && typeof o.musculo === 'string' && Array.isArray(o.exercicios) && DIAS.some((d) => d.idx === o.origem)) {
+        return { origem: o.origem, musculo: o.musculo, exercicios: o.exercicios.filter((x) => typeof x === 'string') };
+      }
+    } catch (_) { /* sem cópia válida */ }
+    return null;
+  }
+
   const fichas = carregarFichas();
+  let copia = carregarCopia();
   const salvarFichas = () => gravar(CHAVE_DADOS, JSON.stringify(fichas));
   const salvarFeitos = () => gravar(CHAVE_FEITOS, JSON.stringify({ data: dataHoje, itens: Array.from(feitos) }));
 
@@ -232,6 +247,73 @@
     li.addEventListener('click', (e) => { if (suprimir) { e.stopPropagation(); e.preventDefault(); } }, true);
   }
 
+  // ---------- Copiar e colar ficha ----------
+  const mesmaFicha = (a, b) => a.musculo === b.musculo && a.exercicios.length === b.exercicios.length && a.exercicios.every((x, i) => x === b.exercicios[i]);
+
+  function preencherAcoes() {
+    const box = document.querySelector('.hero-actions');
+    if (!box) return;
+    box.replaceChildren();
+    const f = fichas[selecionado];
+    if (f.musculo.trim() || f.exercicios.length) {
+      const b = el('button', 'icon-btn glass');
+      b.type = 'button';
+      b.innerHTML = ICONE_COPIAR;
+      b.setAttribute('aria-label', 'Copiar ficha de ' + diaInfo(selecionado).nome.toLowerCase());
+      b.addEventListener('click', copiarFicha);
+      box.append(b);
+    }
+    if (copia && !mesmaFicha(copia, f)) {
+      const b = el('button', 'icon-btn glass');
+      b.type = 'button';
+      b.innerHTML = ICONE_COLAR;
+      b.setAttribute('aria-label', 'Colar aqui a ficha copiada de ' + diaInfo(copia.origem).nome.toLowerCase());
+      b.addEventListener('click', colarFicha);
+      box.append(b);
+    }
+  }
+
+  function copiarFicha() {
+    const f = fichas[selecionado];
+    copia = { origem: selecionado, musculo: f.musculo, exercicios: f.exercicios.slice() };
+    gravar(CHAVE_COPIA, JSON.stringify(copia));
+    preencherAcoes();
+    mostrarAviso('Ficha de ' + diaInfo(selecionado).nome.toLowerCase() + ' copiada');
+  }
+
+  function colarFicha() {
+    if (!copia) return;
+    const alvo = selecionado;
+    const anterior = { musculo: fichas[alvo].musculo, exercicios: fichas[alvo].exercicios.slice() };
+    fichas[alvo] = { musculo: copia.musculo, exercicios: copia.exercicios.slice() };
+    salvarFichas();
+    render();
+    mostrarAviso('Ficha de ' + diaInfo(copia.origem).nome.toLowerCase() + ' colada', () => {
+      fichas[alvo] = anterior;
+      salvarFichas();
+      render();
+    });
+  }
+
+  let avisoTimer = null;
+  function mostrarAviso(texto, desfazer) {
+    const t = $('toast');
+    t.replaceChildren(el('span', null, texto));
+    if (desfazer) {
+      const b = el('button', 'toast-btn', 'Desfazer');
+      b.type = 'button';
+      b.addEventListener('click', () => { desfazer(); esconderAviso(); });
+      t.append(b);
+    }
+    t.hidden = false;
+    t.style.animation = 'none';
+    void t.offsetWidth;
+    t.style.animation = '';
+    clearTimeout(avisoTimer);
+    avisoTimer = setTimeout(esconderAviso, desfazer ? 6000 : 2500);
+  }
+  function esconderAviso() { clearTimeout(avisoTimer); $('toast').hidden = true; }
+
   // ---------- Renderização ----------
   function dataCurta() {
     return new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
@@ -258,6 +340,7 @@
     const sentido = Math.sign(posicao(idx) - posicao(selecionado));
     $('content').style.setProperty('--dx', sentido * 16 + 'px');
     selecionado = idx;
+    esconderAviso();
     render();
   }
 
@@ -271,7 +354,11 @@
     c.replaceChildren();
 
     const hero = el('section', 'hero');
-    hero.append(el('span', 'badge' + (ehHoje ? '' : ' dim'), ehHoje ? info.nome + ' · hoje' : info.nome));
+    const topo = el('div', 'hero-top');
+    topo.append(el('span', 'badge' + (ehHoje ? '' : ' dim'), ehHoje ? info.nome + ' · hoje' : info.nome));
+    const acoes = el('div', 'hero-actions');
+    topo.append(acoes);
+    hero.append(topo);
     if (!vazia) hero.append(el('h1', 'title' + (musculo ? '' : ' dim'), musculo || 'Grupo muscular não definido'));
     c.append(hero);
 
@@ -284,6 +371,12 @@
       b.type = 'button';
       b.addEventListener('click', abrirEdicao);
       card.append(b);
+      if (copia) {
+        const colar = el('button', 'pill glass', 'Colar ficha de ' + diaInfo(copia.origem).nome.toLowerCase());
+        colar.type = 'button';
+        colar.addEventListener('click', colarFicha);
+        card.append(colar);
+      }
       c.append(card);
     } else if (f.exercicios.length === 0) {
       c.append(el('p', 'hint', 'Nenhum exercício na lista. Toque em Editar para adicionar.'));
@@ -295,6 +388,7 @@
       if (ehHoje) atualizarProgresso();
     }
     c.style.setProperty('--dx', '0px');
+    preencherAcoes();
   }
 
   function render() {
