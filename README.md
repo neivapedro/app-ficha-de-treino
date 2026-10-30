@@ -18,6 +18,15 @@ Para o uso offline na academia, um Service Worker (`sw.js`) guarda todos os arqu
 | `sw.js` | Cache offline |
 | `manifest.json` | Manifesto PWA |
 | `icons/` | Ícones `-v2` (192, 512, maskable e `apple-touch-icon` 180) |
+| `splash/` | Telas de abertura do iPhone (uma por tamanho de tela) |
+
+## Recursos
+
+- Ficha do dia aberta automaticamente, com etiqueta de ficha (A, B, C...) editável.
+- Marcar exercícios feitos arrastando (ou tocando no número), com contador e destaque do próximo exercício. A marcação zera no dia seguinte.
+- Copiar a ficha de um dia e colar em outro, com Desfazer.
+- **Ajustes**: seis paletas (incluindo tema claro e Automático, que segue o iPhone), manter a tela acesa durante o treino e cópia de segurança (exportar e importar as fichas em arquivo).
+- Acessível: foco gerenciado nas folhas, leitores de tela, alto contraste e texto que acompanha o tamanho definido no iOS.
 
 ## Rodar localmente
 

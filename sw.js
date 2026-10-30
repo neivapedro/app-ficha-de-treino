@@ -1,5 +1,5 @@
 // Service worker: guarda o app no aparelho para funcionar 100% offline.
-const CACHE = 'ficha-de-treino-v10';
+const CACHE = 'ficha-de-treino-v11';
 const ARQUIVOS = [
   './',
   './index.html',
@@ -7,8 +7,6 @@ const ARQUIVOS = [
   './app.js',
   './manifest.json',
   './icons/icon-192-v2.png',
-  './icons/icon-512-v2.png',
-  './icons/icon-maskable-512-v2.png',
   './icons/apple-touch-icon-v2.png'
 ];
 

@@ -5,7 +5,11 @@
   const CHAVE_TEMA = 'ficha-de-treino:tema';
   const CHAVE_FEITOS = 'ficha-de-treino:feitos';
   const CHAVE_COPIA = 'ficha-de-treino:copia';
+  const CHAVE_TELA = 'ficha-de-treino:tela';
+  const CHAVE_DICA = 'ficha-de-treino:dica';
   const LIMIAR = 0.5; // fração da largura que confirma o gesto
+  const ELASTICO = 0.55; // resistência do arrasto depois do limiar
+  const VEZES_DICA = 3; // quantas vezes a dica do gesto aparece
 
   // Ordem de exibição: segunda → domingo. `getDay()` usa 0 = domingo.
   const DIAS = [
@@ -19,16 +23,19 @@
   ];
 
   const TEMAS = [
-    { id: 'floresta', nome: 'Floresta', cor: '#1d2a26', destaque: '#bad1c3' },
-    { id: 'terra', nome: 'Terra', cor: '#261c15', destaque: '#e3c7a4' },
-    { id: 'oliva', nome: 'Oliva', cor: '#212717', destaque: '#c3cf9f' },
-    { id: 'musgo', nome: 'Musgo', cor: '#1d2a26', destaque: '#e8d5b8' }
+    { id: 'auto', nome: 'Automático', cor: '#1d2a26', destaque: '#bad1c3', fundo: 'linear-gradient(90deg, #1d2a26 50%, #efe6da 50%)', linha: '#8a918b' },
+    { id: 'floresta', nome: 'Floresta', cor: '#1d2a26', destaque: '#bad1c3', fundo: '#1d2a26', linha: '#f3ece0' },
+    { id: 'terra', nome: 'Terra', cor: '#261c15', destaque: '#e3c7a4', fundo: '#261c15', linha: '#f3ece0' },
+    { id: 'oliva', nome: 'Oliva', cor: '#212717', destaque: '#c3cf9f', fundo: '#212717', linha: '#f3ece0' },
+    { id: 'musgo', nome: 'Musgo', cor: '#1d2a26', destaque: '#e8d5b8', fundo: '#1d2a26', linha: '#f3ece0' },
+    { id: 'creme', nome: 'Creme', cor: '#efe6da', destaque: '#3f6b57', fundo: '#efe6da', linha: '#1f2a26' }
   ];
 
-  const ICONE_REMOVER = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>';
-  const ICONE_CHECK = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  const ICONE_COPIAR = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1Zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H8V7h11v14Z"/></svg>';
-  const ICONE_COLAR = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19 2h-4.2A3 3 0 0 0 12 0a3 3 0 0 0-2.8 2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm7 18H5V4h2v3h10V4h2v16Z"/></svg>';
+  const svg = (w, caminho) => '<svg viewBox="0 0 24 24" width="' + w + '" height="' + w + '" aria-hidden="true">' + caminho + '</svg>';
+  const ICONE_REMOVER = svg(20, '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/>');
+  const ICONE_CHECK = svg(16, '<path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>');
+  const ICONE_SETA = svg(18, '<path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>');
+  const ICONE_MAIS = svg(22, '<circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/>');
   const ICONE_HALTER = '<svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 24h20"/><rect x="8" y="14" width="6" height="20" rx="2"/><rect x="34" y="14" width="6" height="20" rx="2"/><path d="M4 19v10M44 19v10"/></g></svg>';
 
   const $ = (id) => document.getElementById(id);
@@ -38,24 +45,34 @@
     if (texto != null) n.textContent = texto;
     return n;
   };
+  const reduzMovimento = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ---------- Armazenamento ----------
   const ler = (chave) => { try { return localStorage.getItem(chave); } catch (_) { return null; } };
-  const gravar = (chave, valor) => { try { localStorage.setItem(chave, valor); } catch (_) { /* modo privado/cheio */ } };
+  const gravar = (chave, valor) => { try { localStorage.setItem(chave, valor); return true; } catch (_) { return false; } };
+  const armazenamentoOk = gravar('ficha-de-treino:teste', '1');
+  const MSG_FALHA = 'Não foi possível salvar neste navegador. As alterações podem ser perdidas.';
 
-  function carregarFichas() {
+  // Aceita só o formato esperado, de qualquer origem (armazenamento ou arquivo importado)
+  function normalizarFichas(bruto) {
     const fichas = {};
-    let bruto = {};
-    try { bruto = JSON.parse(ler(CHAVE_DADOS) || '{}') || {}; } catch (_) { bruto = {}; }
+    const origem = bruto && typeof bruto === 'object' ? bruto : {};
     for (let i = 0; i < 7; i++) {
-      const f = bruto[i];
+      const f = origem[i];
       fichas[i] = {
-        ficha: f && typeof f.ficha === 'string' ? f.ficha : '',
-        musculo: f && typeof f.musculo === 'string' ? f.musculo : '',
-        exercicios: f && Array.isArray(f.exercicios) ? f.exercicios.filter((x) => typeof x === 'string') : []
+        ficha: f && typeof f.ficha === 'string' ? f.ficha.slice(0, 4) : '',
+        musculo: f && typeof f.musculo === 'string' ? f.musculo.slice(0, 40) : '',
+        exercicios: f && Array.isArray(f.exercicios) ? f.exercicios.filter((x) => typeof x === 'string').map((x) => x.slice(0, 60)) : []
       };
     }
     return fichas;
+  }
+  const copiaDeFichas = (f) => JSON.parse(JSON.stringify(f));
+
+  function carregarFichas() {
+    let bruto = {};
+    try { bruto = JSON.parse(ler(CHAVE_DADOS) || '{}'); } catch (_) { bruto = {}; }
+    return normalizarFichas(bruto);
   }
 
   // Exercícios feitos hoje. Guardados com a data: no dia seguinte a marcação recomeça do zero.
@@ -83,30 +100,81 @@
     return null;
   }
 
-  const fichas = carregarFichas();
+  let fichas = carregarFichas();
   let copia = carregarCopia();
   const salvarFichas = () => gravar(CHAVE_DADOS, JSON.stringify(fichas));
   const salvarFeitos = () => gravar(CHAVE_FEITOS, JSON.stringify({ data: dataHoje, itens: Array.from(feitos) }));
+  const falhaAoSalvar = () => mostrarAviso(MSG_FALHA, null, 'erro');
 
   // ---------- Estado ----------
   let hoje = new Date().getDay();
   let dataHoje = dataISO();
   let feitos = carregarFeitos(dataHoje);
   let selecionado = hoje;
-  let focoAnterior = null;
+  let dicaMostrada = false;
 
   const diaInfo = (idx) => DIAS.find((d) => d.idx === idx);
   const posicao = (idx) => DIAS.findIndex((d) => d.idx === idx);
+  const temConteudo = (f) => Boolean(f.musculo.trim() || f.exercicios.length);
+
+  // ---------- Avisos e anúncios ----------
+  let avisoTimer = null;
+  function mostrarAviso(texto, desfazer, tipo) {
+    const t = $('toast');
+    t.replaceChildren(el('span', null, texto));
+    t.classList.toggle('erro', tipo === 'erro');
+    t.setAttribute('role', tipo === 'erro' ? 'alert' : 'status');
+    if (desfazer) {
+      const b = el('button', 'toast-btn', 'Desfazer');
+      b.type = 'button';
+      b.addEventListener('click', () => { desfazer(); esconderAviso(); });
+      t.append(b);
+    }
+    t.hidden = false;
+    t.style.animation = 'none';
+    void t.offsetWidth;
+    t.style.animation = '';
+    clearTimeout(avisoTimer);
+    avisoTimer = setTimeout(esconderAviso, tipo === 'erro' ? 9000 : desfazer ? 6000 : 2500);
+  }
+  function esconderAviso() { clearTimeout(avisoTimer); $('toast').hidden = true; }
+
+  // Região invisível para leitores de tela: mensagens curtas, sem reler a tela inteira
+  function anunciar(msg) {
+    const a = $('anuncio');
+    a.textContent = '';
+    setTimeout(() => { a.textContent = msg; }, 60);
+  }
+
+  // Vibração leve ao concluir. Técnica não oficial do iOS 17.4+ (interruptor nativo); sem suporte, não faz nada.
+  function haptico() {
+    try {
+      const l = document.createElement('label');
+      l.setAttribute('aria-hidden', 'true');
+      l.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none';
+      const i = document.createElement('input');
+      i.type = 'checkbox';
+      i.setAttribute('switch', '');
+      l.append(i);
+      document.body.append(l);
+      l.click();
+      l.remove();
+    } catch (_) { /* sem vibração */ }
+  }
 
   // ---------- Tema ----------
-  function aplicarTema(id) {
-    const tema = TEMAS.find((t) => t.id === id) || TEMAS[0];
+  const escuroClaro = window.matchMedia('(prefers-color-scheme: light)');
+  const temaGuardado = () => { const t = ler(CHAVE_TEMA); return TEMAS.some((x) => x.id === t) ? t : 'auto'; };
+
+  function aplicarTema(pref) {
+    const resolvido = pref === 'auto' ? (escuroClaro.matches ? 'creme' : 'floresta') : pref;
+    const tema = TEMAS.find((t) => t.id === resolvido) || TEMAS[1];
     document.documentElement.dataset.theme = tema.id;
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', tema.cor);
-    document.querySelectorAll('.swatch').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.id === tema.id)));
-    return tema.id;
+    document.querySelectorAll('.swatch').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.id === pref)));
   }
+  escuroClaro.addEventListener('change', () => { if (temaGuardado() === 'auto') aplicarTema('auto'); });
 
   function montarTemas() {
     const box = $('swatches');
@@ -119,14 +187,93 @@
       b.setAttribute('role', 'radio');
       // Miniatura da interface com as cores da paleta
       const chip = el('div', 'chip');
-      chip.style.background = t.cor;
+      chip.style.background = t.fundo;
+      chip.style.setProperty('--linha', t.linha);
       const selo = el('i');
       selo.style.background = t.destaque;
       chip.append(selo, el('i'), el('i'));
       b.append(chip, el('span', null, t.nome));
-      b.addEventListener('click', () => gravar(CHAVE_TEMA, aplicarTema(t.id)));
+      b.addEventListener('click', () => { gravar(CHAVE_TEMA, t.id); aplicarTema(t.id); });
       box.append(b);
     });
+  }
+
+  // ---------- Tela acesa durante o treino ----------
+  let wake = null;
+  const wakeSuportado = 'wakeLock' in navigator;
+  async function aplicarTela() {
+    if (!wakeSuportado) return;
+    const ativo = ler(CHAVE_TELA) === '1';
+    if (ativo && !document.hidden) {
+      if (!wake) {
+        try {
+          wake = await navigator.wakeLock.request('screen');
+          wake.addEventListener('release', () => { wake = null; });
+        } catch (_) {
+          wake = null;
+          statusAjustes('Não foi possível manter a tela acesa agora.', true);
+        }
+      }
+    } else if (wake) {
+      wake.release().catch(() => {});
+      wake = null;
+    }
+  }
+
+  // ---------- Cópia de segurança ----------
+  function statusAjustes(texto, erro, desfazer) {
+    const s = $('aj-status');
+    s.replaceChildren(el('span', null, texto));
+    s.classList.toggle('erro-msg', Boolean(erro));
+    if (desfazer) {
+      const b = el('button', null, 'Desfazer');
+      b.type = 'button';
+      b.addEventListener('click', () => { desfazer(); b.remove(); });
+      s.append(b);
+    }
+  }
+
+  async function exportarFichas() {
+    const dados = { app: 'ficha-de-treino', versao: 1, exportadoEm: new Date().toISOString(), fichas };
+    const texto = JSON.stringify(dados, null, 2);
+    const nome = 'ficha-de-treino-' + dataISO() + '.json';
+    try {
+      const arquivo = new File([texto], nome, { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+        await navigator.share({ files: [arquivo], title: 'Ficha de Treino' });
+      } else {
+        const url = URL.createObjectURL(new Blob([texto], { type: 'application/json' }));
+        const a = el('a');
+        a.href = url;
+        a.download = nome;
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      }
+      statusAjustes('Arquivo pronto. Guarde em um lugar seguro.');
+    } catch (e) {
+      if (e && e.name === 'AbortError') return; // o usuário fechou a folha de compartilhar
+      statusAjustes('Não foi possível exportar as fichas.', true);
+    }
+  }
+
+  async function importarFichas(arquivo) {
+    if (!arquivo) return;
+    try {
+      const o = JSON.parse(await arquivo.text());
+      if (!o || o.app !== 'ficha-de-treino' || typeof o.fichas !== 'object') throw new Error('formato');
+      const anterior = copiaDeFichas(fichas);
+      fichas = normalizarFichas(o.fichas);
+      if (!salvarFichas()) { fichas = anterior; statusAjustes(MSG_FALHA, true); return; }
+      statusAjustes('Fichas importadas.', false, () => {
+        fichas = anterior;
+        if (!salvarFichas()) falhaAoSalvar();
+        statusAjustes('Importação desfeita.');
+      });
+    } catch (_) {
+      statusAjustes('Esse arquivo não é uma cópia válida do Ficha de Treino.', true);
+    }
   }
 
   // ---------- Progresso do treino de hoje ----------
@@ -138,17 +285,20 @@
     barra.setAttribute('role', 'progressbar');
     barra.setAttribute('aria-label', 'Exercícios feitos');
     barra.append(el('i'));
-    box.append(topo, barra, el('p', 'prog-hint', 'Arraste um exercício para a direita para marcar como feito.'));
+    box.append(topo, barra);
     return box;
   }
 
   function atualizarProgresso() {
     const box = document.querySelector('.progress');
     if (!box) return;
+    const itens = Array.from(document.querySelectorAll('.item'));
     const total = fichas[hoje].exercicios.length;
-    const n = document.querySelectorAll('.item.feito').length;
-    box.querySelector('.prog-count').textContent = n + ' de ' + total + (total === 1 ? ' feito' : ' feitos');
+    const n = itens.filter((i) => i.classList.contains('feito')).length;
+    const texto = n + ' de ' + total + (total === 1 ? ' feito' : ' feitos');
+    box.querySelector('.prog-count').textContent = texto;
     box.querySelector('.prog-rest').textContent = n === total ? 'Treino concluído ✓' : n === 0 ? '' : 'faltam ' + (total - n);
+
     const completo = n === total;
     const havia = box.classList.contains('completo');
     box.classList.toggle('completo', completo);
@@ -161,11 +311,16 @@
       box.classList.add('brilho');
     }
     box.dataset.pronto = '1';
-    box.querySelector('.prog-hint').hidden = n !== 0;
+
+    // O primeiro exercício pendente fica em destaque
+    const proximo = itens.find((i) => !i.classList.contains('feito'));
+    itens.forEach((i) => { i.classList.toggle('proximo', i === proximo); if (i === proximo) i.setAttribute('aria-current', 'step'); else i.removeAttribute('aria-current'); });
+
     const barra = box.querySelector('.bar');
     barra.setAttribute('aria-valuemin', '0');
     barra.setAttribute('aria-valuemax', String(total));
     barra.setAttribute('aria-valuenow', String(n));
+    barra.setAttribute('aria-valuetext', texto);
     barra.firstChild.style.width = (total ? (n / total) * 100 : 0) + '%';
   }
 
@@ -173,36 +328,41 @@
     const li = el('li', 'item');
     const fill = el('i', 'fill');
     fill.setAttribute('aria-hidden', 'true');
-    li.append(fill);
-    if (!interativo) {
-      const num = el('span', 'num');
-      num.append(el('span'));
-      li.append(num, el('span', 'nome', nome));
-      return li;
-    }
-    const num = el('button', 'num');
-    num.type = 'button';
+    const num = el(interativo ? 'button' : 'span', 'num');
     num.append(el('span'));
     const nomeEl = el('span', 'nome', nome);
+    li.append(fill, num, nomeEl);
+    if (!interativo) return li;
+
+    const seta = el('span', 'seta');
+    seta.setAttribute('aria-hidden', 'true');
+    seta.innerHTML = ICONE_SETA;
+    const prox = el('span', 'prox', 'Próximo');
+    prox.setAttribute('aria-hidden', 'true');
     const ok = el('span', 'check');
     ok.setAttribute('aria-hidden', 'true');
     ok.innerHTML = ICONE_CHECK;
-    li.append(num, nomeEl, ok);
+    const fim = el('span', 'fim');
+    fim.append(ok, prox);
+    li.append(seta, fim);
+
+    num.type = 'button';
     li.classList.add('swipe');
     const feito = feitos.has(chave);
     li.classList.toggle('feito', feito);
     li.style.setProperty('--p', feito ? 1 : 0);
     num.setAttribute('aria-pressed', String(feito));
-    num.setAttribute('aria-label', 'Marcar "' + nome + '" como feito');
+    num.setAttribute('aria-label', 'Feito: ' + nome);
     num.addEventListener('click', () => definirFeito(li, chave, !feitos.has(chave)));
     ligarGesto(li, chave);
     return li;
   }
 
   function definirFeito(li, chave, valor) {
+    const mudou = feitos.has(chave) !== valor;
     if (valor) feitos.add(chave); else feitos.delete(chave);
-    salvarFeitos();
-    li.classList.remove('arrastando');
+    if (!salvarFeitos()) falhaAoSalvar();
+    li.classList.remove('arrastando', 'esq');
     li.classList.toggle('feito', valor);
     li.style.setProperty('--p', valor ? 1 : 0);
     li.querySelector('.num').setAttribute('aria-pressed', String(valor));
@@ -212,6 +372,12 @@
       li.classList.add('pop');
     }
     atualizarProgresso();
+    if (mudou) {
+      if (valor) haptico();
+      const total = fichas[hoje].exercicios.length;
+      const n = document.querySelectorAll('.item.feito').length;
+      anunciar(li.querySelector('.nome').textContent + (valor ? ' feito. ' : ' desmarcado. ') + n + ' de ' + total + ' feitos.');
+    }
   }
 
   // Arrastar para a direita preenche o exercício; passando da metade, confirma ao soltar.
@@ -235,13 +401,16 @@
           modo = 'h';
           li.setPointerCapture(id);
           li.classList.add('arrastando');
+          li.classList.toggle('esq', base === 1);
         } else {
           if (Math.abs(dy) > 10) id = null; // rolagem vertical: deixa o navegador rolar
           return;
         }
       }
       p = Math.min(1, Math.max(0, base + dx / larg));
-      li.style.setProperty('--p', p);
+      // Resistência elástica depois do limiar, ao marcar
+      const visual = base === 0 && p > LIMIAR ? LIMIAR + (p - LIMIAR) * ELASTICO : p;
+      li.style.setProperty('--p', visual);
       li.classList.toggle('feito', p >= LIMIAR);
     });
 
@@ -261,35 +430,73 @@
 
   // ---------- Copiar e colar ficha ----------
   const mesmaFicha = (a, b) => a.ficha === b.ficha && a.musculo === b.musculo && a.exercicios.length === b.exercicios.length && a.exercicios.every((x, i) => x === b.exercicios[i]);
+  const podeColar = () => Boolean(copia && !mesmaFicha(copia, fichas[selecionado]));
+
+  let menuAberto = null;
+  function fecharMenu(devolverFoco) {
+    if (!menuAberto) return;
+    const { menu, btn } = menuAberto;
+    menuAberto = null;
+    menu.remove();
+    btn.setAttribute('aria-expanded', 'false');
+    if (devolverFoco) btn.focus();
+  }
+
+  function abrirMenu(btn) {
+    const menu = el('div', 'menu float');
+    menu.setAttribute('role', 'menu');
+    if (temConteudo(fichas[selecionado])) {
+      const c = el('button', null, 'Copiar ficha');
+      c.type = 'button';
+      c.setAttribute('role', 'menuitem');
+      c.addEventListener('click', () => { fecharMenu(true); copiarFicha(); });
+      menu.append(c);
+    }
+    if (podeColar()) {
+      const c = el('button', null, 'Colar de ' + diaInfo(copia.origem).nome.toLowerCase());
+      c.type = 'button';
+      c.setAttribute('role', 'menuitem');
+      c.addEventListener('click', () => { fecharMenu(false); colarFicha(); });
+      menu.append(c);
+    }
+    btn.parentNode.append(menu);
+    btn.setAttribute('aria-expanded', 'true');
+    menuAberto = { menu, btn };
+    menu.querySelector('button').focus();
+  }
+
+  document.addEventListener('click', (e) => { if (menuAberto && !e.target.closest('.hero-actions')) fecharMenu(false); });
+  document.addEventListener('keydown', (e) => {
+    if (!menuAberto) return;
+    if (e.key === 'Escape') { e.preventDefault(); fecharMenu(true); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const itens = Array.from(menuAberto.menu.querySelectorAll('button'));
+      const i = itens.indexOf(document.activeElement);
+      itens[(i + (e.key === 'ArrowDown' ? 1 : -1) + itens.length) % itens.length].focus();
+    }
+  });
 
   function preencherAcoes() {
     const box = document.querySelector('.hero-actions');
     if (!box) return;
     box.replaceChildren();
-    const f = fichas[selecionado];
-    if (f.musculo.trim() || f.exercicios.length) {
-      const b = el('button', 'icon-btn glass');
-      b.type = 'button';
-      b.innerHTML = ICONE_COPIAR;
-      b.setAttribute('aria-label', 'Copiar ficha de ' + diaInfo(selecionado).nome.toLowerCase());
-      b.addEventListener('click', copiarFicha);
-      box.append(b);
-    }
-    if (copia && !mesmaFicha(copia, f)) {
-      const b = el('button', 'icon-btn glass');
-      b.type = 'button';
-      b.innerHTML = ICONE_COLAR;
-      b.setAttribute('aria-label', 'Colar aqui a ficha copiada de ' + diaInfo(copia.origem).nome.toLowerCase());
-      b.addEventListener('click', colarFicha);
-      box.append(b);
-    }
+    menuAberto = null;
+    if (!temConteudo(fichas[selecionado]) && !podeColar()) return;
+    const b = el('button', 'icon-btn glass');
+    b.type = 'button';
+    b.innerHTML = ICONE_MAIS;
+    b.setAttribute('aria-label', 'Copiar ou colar ficha');
+    b.setAttribute('aria-haspopup', 'menu');
+    b.setAttribute('aria-expanded', 'false');
+    b.addEventListener('click', () => { if (menuAberto) fecharMenu(false); else abrirMenu(b); });
+    box.append(b);
   }
 
   function copiarFicha() {
     const f = fichas[selecionado];
     copia = { origem: selecionado, ficha: f.ficha, musculo: f.musculo, exercicios: f.exercicios.slice() };
     gravar(CHAVE_COPIA, JSON.stringify(copia));
-    preencherAcoes();
     mostrarAviso('Ficha de ' + diaInfo(selecionado).nome.toLowerCase() + ' copiada');
   }
 
@@ -298,49 +505,31 @@
     const alvo = selecionado;
     const anterior = { ficha: fichas[alvo].ficha, musculo: fichas[alvo].musculo, exercicios: fichas[alvo].exercicios.slice() };
     fichas[alvo] = { ficha: copia.ficha, musculo: copia.musculo, exercicios: copia.exercicios.slice() };
-    salvarFichas();
+    if (!salvarFichas()) falhaAoSalvar();
     render();
+    anunciar('Ficha colada.');
     mostrarAviso('Ficha de ' + diaInfo(copia.origem).nome.toLowerCase() + ' colada', () => {
       fichas[alvo] = anterior;
-      salvarFichas();
+      if (!salvarFichas()) falhaAoSalvar();
       render();
     });
   }
 
-  let avisoTimer = null;
-  function mostrarAviso(texto, desfazer) {
-    const t = $('toast');
-    t.replaceChildren(el('span', null, texto));
-    if (desfazer) {
-      const b = el('button', 'toast-btn', 'Desfazer');
-      b.type = 'button';
-      b.addEventListener('click', () => { desfazer(); esconderAviso(); });
-      t.append(b);
-    }
-    t.hidden = false;
-    t.style.animation = 'none';
-    void t.offsetWidth;
-    t.style.animation = '';
-    clearTimeout(avisoTimer);
-    avisoTimer = setTimeout(esconderAviso, desfazer ? 6000 : 2500);
-  }
-  function esconderAviso() { clearTimeout(avisoTimer); $('toast').hidden = true; }
-
   // ---------- Renderização ----------
-  function dataCurta() {
-    return new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
-  }
+  const dataCurta = () => new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
 
   function renderDock() {
     const dock = $('dock');
     dock.replaceChildren();
     DIAS.forEach((d) => {
+      const f = fichas[d.idx];
+      const letra = f.ficha.trim();
+      const tem = temConteudo(f);
       const b = el('button', 'day' + (d.idx === hoje ? ' today' : ''));
       b.type = 'button';
-      b.setAttribute('role', 'tab');
-      b.setAttribute('aria-selected', String(d.idx === selecionado));
-      b.setAttribute('aria-label', d.nome + (d.idx === hoje ? ' (hoje)' : ''));
-      b.append(el('span', null, d.curto), el('i', 'dot'));
+      if (d.idx === selecionado) b.setAttribute('aria-current', 'true');
+      b.setAttribute('aria-label', d.nome + (d.idx === hoje ? ' (hoje)' : '') + ', ' + (letra ? 'ficha ' + letra : tem ? 'treino cadastrado' : 'sem treino'));
+      b.append(el('span', 'lbl', d.curto), el('span', 'sub' + (letra ? '' : tem ? ' ponto' : ' traco'), letra));
       b.addEventListener('click', () => irParaDia(d.idx));
       dock.append(b);
     });
@@ -348,12 +537,26 @@
 
   function irParaDia(idx) {
     if (idx === selecionado) return;
-    // A nova ficha entra pelo lado do dia escolhido
     const sentido = Math.sign(posicao(idx) - posicao(selecionado));
-    $('content').style.setProperty('--dx', sentido * 16 + 'px');
-    selecionado = idx;
-    esconderAviso();
-    render();
+    const trocar = () => {
+      selecionado = idx;
+      esconderAviso();
+      fecharMenu(false);
+      render();
+      const f = fichas[idx];
+      const n = f.exercicios.length;
+      anunciar(diaInfo(idx).nome + '. ' + (temConteudo(f) ? (f.ficha.trim() ? 'Ficha ' + f.ficha.trim() + '. ' : '') + (f.musculo.trim() ? f.musculo.trim() + '. ' : '') + n + (n === 1 ? ' exercício.' : ' exercícios.') : 'Sem treino cadastrado.'));
+    };
+    if (document.startViewTransition && !reduzMovimento()) {
+      const raiz = document.documentElement;
+      raiz.style.setProperty('--vt-dx', sentido * 40 + 'px');
+      raiz.classList.add('vt');
+      const t = document.startViewTransition(trocar);
+      t.finished.finally(() => raiz.classList.remove('vt'));
+    } else {
+      $('content').style.setProperty('--dx', sentido * 16 + 'px');
+      trocar();
+    }
   }
 
   function renderConteudo() {
@@ -368,8 +571,7 @@
     const hero = el('section', 'hero');
     const topo = el('div', 'hero-top');
     topo.append(el('span', 'badge' + (ehHoje ? '' : ' dim'), ehHoje ? info.nome + ' · hoje' : info.nome));
-    const acoes = el('div', 'hero-actions');
-    topo.append(acoes);
+    topo.append(el('div', 'hero-actions'));
     hero.append(topo);
     if (!vazia) {
       const linha = el('div', 'title-row');
@@ -406,12 +608,28 @@
     } else {
       if (ehHoje) c.append(montarProgresso());
       const ul = el('ul', 'list glass');
+      ul.setAttribute('aria-label', 'Exercícios de ' + info.nome.toLowerCase());
       f.exercicios.forEach((nome, i) => ul.append(montarItem(nome, chaveItem(i, nome), ehHoje)));
       c.append(ul);
-      if (ehHoje) atualizarProgresso();
+      if (ehHoje) {
+        atualizarProgresso();
+        mostrarDica(ul);
+      }
     }
     c.style.setProperty('--dx', '0px');
     preencherAcoes();
+  }
+
+  // Nas primeiras vezes, o primeiro exercício mostra o gesto de arrastar
+  function mostrarDica(ul) {
+    if (dicaMostrada || document.querySelector('.item.feito')) return;
+    const vezes = parseInt(ler(CHAVE_DICA) || '0', 10) || 0;
+    if (vezes >= VEZES_DICA) return;
+    dicaMostrada = true;
+    gravar(CHAVE_DICA, String(vezes + 1));
+    const primeiro = ul.firstChild;
+    primeiro.classList.add('dica');
+    primeiro.addEventListener('animationend', (e) => { if (e.target === primeiro.querySelector('.fill')) primeiro.classList.remove('dica'); });
   }
 
   function render() {
@@ -422,37 +640,47 @@
     renderConteudo();
   }
 
-  // ---------- Folhas ----------
-  const overlay = $('overlay');
+  // ---------- Folhas (<dialog> modal: foco preso e fundo inerte) ----------
+  const dlgEdicao = $('sheet-edit');
+  const dlgAjustes = $('sheet-ajustes');
+  let dlgAberto = null;
 
   // Mantém a folha acima do teclado do iOS, que reduz a área visível
   function ajustarViewport() {
     const v = window.visualViewport;
-    if (!v || overlay.hidden) return;
-    overlay.style.top = v.offsetTop + 'px';
-    overlay.style.height = v.height + 'px';
-    overlay.style.bottom = 'auto';
+    if (!v || !dlgAberto) return;
+    if (!window.matchMedia('(max-width: 699px)').matches) {
+      dlgAberto.style.bottom = dlgAberto.style.maxHeight = '';
+      return;
+    }
+    dlgAberto.style.bottom = Math.max(0, window.innerHeight - v.height - v.offsetTop) + 'px';
+    dlgAberto.style.maxHeight = Math.round(v.height * 0.92) + 'px';
   }
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', ajustarViewport);
     window.visualViewport.addEventListener('scroll', ajustarViewport);
   }
 
-  function abrirSheet(id) {
-    focoAnterior = document.activeElement;
-    overlay.hidden = false;
-    document.querySelectorAll('.sheet').forEach((s) => { s.hidden = s.id !== id; });
+  function abrirDialogo(dlg) {
+    fecharMenu(false);
+    dlgAberto = dlg;
     document.body.classList.add('lock');
+    dlg.showModal();
     ajustarViewport();
+    const titulo = dlg.querySelector('h2');
+    if (titulo) titulo.focus({ preventScroll: true }); // foco dentro da folha, sem abrir o teclado
   }
 
-  function fecharSheet() {
-    overlay.hidden = true;
-    overlay.style.top = overlay.style.height = overlay.style.bottom = '';
-    document.body.classList.remove('lock');
-    if (focoAnterior && focoAnterior.focus) focoAnterior.focus({ preventScroll: true });
-    render();
-  }
+  [dlgEdicao, dlgAjustes].forEach((dlg) => {
+    dlg.addEventListener('close', () => {
+      document.body.classList.remove('lock');
+      dlg.style.bottom = dlg.style.maxHeight = '';
+      dlgAberto = null;
+      render();
+    });
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); }); // toque no fundo escuro
+    dlg.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => dlg.close()));
+  });
 
   function novaLinha(valor, focar) {
     const li = el('li', 'row');
@@ -494,7 +722,8 @@
     const salvar = $('btn-save');
     salvar.disabled = false;
     salvar.textContent = 'Salvar';
-    abrirSheet('sheet-edit');
+    $('erro-salvar').hidden = true;
+    abrirDialogo(dlgEdicao);
   }
 
   $('form-edit').addEventListener('submit', (e) => {
@@ -506,11 +735,18 @@
       musculo: $('in-muscle').value.trim(),
       exercicios: Array.from($('rows').querySelectorAll('input')).map((i) => i.value.trim()).filter(Boolean)
     };
-    salvarFichas();
+    if (!salvarFichas()) {
+      // Não finge que salvou: mantém a folha aberta e explica
+      const erro = $('erro-salvar');
+      erro.textContent = MSG_FALHA + ' Use Ajustes > Exportar fichas para guardar uma cópia.';
+      erro.hidden = false;
+      return;
+    }
+    $('erro-salvar').hidden = true;
     // Confirmação visual breve antes de fechar
     salvar.disabled = true;
     salvar.textContent = 'Salvo ✓';
-    setTimeout(fecharSheet, 450);
+    setTimeout(() => dlgEdicao.close(), 450);
   });
 
   $('in-ficha').addEventListener('keydown', (e) => {
@@ -528,31 +764,62 @@
 
   $('btn-add').addEventListener('click', () => novaLinha('', true));
   $('btn-edit').addEventListener('click', abrirEdicao);
-  $('btn-theme').addEventListener('click', () => abrirSheet('sheet-theme'));
   $('btn-today').addEventListener('click', () => irParaDia(hoje));
-  overlay.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) fecharSheet(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !overlay.hidden) fecharSheet(); });
+
+  // Ajustes
+  function abrirAjustes() {
+    $('aj-status').replaceChildren();
+    aplicarTema(temaGuardado());
+    abrirDialogo(dlgAjustes);
+  }
+  $('btn-ajustes').addEventListener('click', abrirAjustes);
+
+  const swTela = $('sw-tela');
+  function atualizarSwitchTela() { swTela.setAttribute('aria-checked', String(ler(CHAVE_TELA) === '1')); }
+  swTela.addEventListener('click', () => {
+    gravar(CHAVE_TELA, ler(CHAVE_TELA) === '1' ? '0' : '1');
+    atualizarSwitchTela();
+    aplicarTela();
+  });
+  $('btn-exportar').addEventListener('click', exportarFichas);
+  $('btn-importar').addEventListener('click', () => $('arq-importar').click());
+  $('arq-importar').addEventListener('change', (e) => {
+    importarFichas(e.target.files[0]);
+    e.target.value = '';
+  });
 
   // ---------- Virada de dia ----------
   // Ao voltar para o app (ou à meia-noite com ele aberto), recalcula o dia pelo relógio do aparelho.
   // Só redesenha quando o dia mudou, para a lista não piscar à toa.
   function verificarDia() {
     const agora = new Date().getDay();
-    if (agora === hoje) return;
+    const data = dataISO();
+    if (agora === hoje && data === dataHoje) return;
     const seguia = selecionado === hoje;
     hoje = agora;
+    if (data !== dataHoje) { dataHoje = data; feitos = carregarFeitos(dataHoje); dicaMostrada = false; }
     if (seguia) selecionado = hoje;
-    if (overlay.hidden) render();
+    if (!dlgAberto) render();
   }
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) verificarDia(); });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) verificarDia();
+    aplicarTela();
+  });
   window.addEventListener('pageshow', verificarDia);
   window.addEventListener('focus', verificarDia);
   setInterval(verificarDia, 60000);
 
   // ---------- Início ----------
   montarTemas();
-  aplicarTema(ler(CHAVE_TEMA));
+  aplicarTema(temaGuardado());
+  atualizarSwitchTela();
+  $('sec-tela').hidden = !wakeSuportado;
   render();
+  aplicarTela();
+
+  if (!armazenamentoOk) falhaAoSalvar();
+  // Pede ao navegador para não apagar os dados do app por falta de espaço
+  if (armazenamentoOk && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
